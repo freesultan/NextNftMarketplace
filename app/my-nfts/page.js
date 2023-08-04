@@ -2,15 +2,18 @@
 
 import { ethers } from "ethers";
 import { nftMarketplaceAddress } from "@/config";
-import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
+import NFTMarketplace from "@/artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
-export default function Home() {
+const MyNFTs = () => {
   const [nfts, setNfts] = useState([]);
   const [loadingState, setLoadingState] = useState("not-loaded");
   const [provider, setProvider] = useState(null);
   const [account, setAccount] = useState(null);
+  
+  const router = useRouter();
 
   useEffect(() => {
     loadNFTs();
@@ -20,20 +23,19 @@ export default function Home() {
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
-     const account = ethers.getAddress(accounts[0]);
-     setAccount(account);
-     console.log(' account: ' + account)
-
+    const account = ethers.getAddress(accounts[0]);
+    setAccount(account);
+    console.log(" account: " + account);
 
     const provider = new ethers.BrowserProvider(window.ethereum);
-    console.log(' signer: ' +  await provider.getSigner());
+    const signer = await provider.getSigner();
     setProvider(provider);
     const contract = new ethers.Contract(
       nftMarketplaceAddress,
       NFTMarketplace.abi,
-      provider
+      signer
     );
-    const data = await contract.fetchMarketItems();
+    const data = await contract.fetchMyNFTs();
 
     /*
      *  map over items returned from smart contract and format
@@ -44,6 +46,7 @@ export default function Home() {
         const tokenUri = await contract.tokenURI(i.tokenId);
         console.log("tokenuir> " + tokenUri);
         console.log("tokenId i > " + i.tokenId);
+        
         const name = tokenUri.substring(tokenUri.lastIndexOf("/") + 1);
         let price = ethers.formatUnits(i.price.toString(), "ether");
         let item = {
@@ -66,35 +69,24 @@ export default function Home() {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
-       const account = ethers.getAddress(accounts[0]);
-       setAccount(account);
-       console.log('new account: ' + account)
-    });
+      const account = ethers.getAddress(accounts[0]);
+      setAccount(account);
+      console.log("new account: " + account);
+      
+     loadNFTs() 
+     });
   }
-  async function buyNft(nft) {
-    /* needs the user to sign the transaction, so will use Web3Provider and sign it */
-    const provider = new ethers.BrowserProvider(window.ethereum);
 
-    const signer = await provider.getSigner();
-    console.log('singer: ' + signer)
-    const contract = new ethers.Contract(
-      nftMarketplaceAddress,
-      NFTMarketplace.abi,
-      signer
-    );
-
-    /* user will be prompted to pay the asking proces to complete the transaction */
-    const price = ethers.parseUnits(nft.price.toString(), "ether");
-    console.log("price> " + price);
-    console.log("tokenId> " + nft.tokenId);
-    const transaction = await contract.createMarketSale(nft.tokenId, {
-      value: price,
-    });
-    await transaction.wait();
-    loadNFTs();
+  function listNFT(nft) {
+    console.log("nft:", nft);
+    // router.push(`/resell-nft?id=${nft.tokenId}&tokenURI=${nft.tokenURI}`)
   }
   if (loadingState === "loaded" && !nfts.length)
-    return <h1 className="px-20 py-10 text-3xl">No items in marketplace</h1>;
+    return (
+      <h1 className="px-20 py-10 text-3xl">
+        ` the account {account.slice(0,6)} ... {account.slice(36,42)}  has no assets`
+      </h1>
+    );
 
   return (
     <div className="flex justify-center">
@@ -103,21 +95,16 @@ export default function Home() {
           {nfts.map((nft, i) => (
             <div key={i} className="border shadow rounded-xl overflow-hidden">
               <img src={nft.image} />
-              <div className="p-4">
-                <p
-                  style={{ height: "64px" }}
-                  className="text-2xl font-semibold"
-                >
-                  {nft.name}
-                </p>
-              </div>
+
               <div className="p-4 bg-black">
-                <p className="text-2xl font-bold text-white">{nft.price} ETH</p>
+                <p className="text-2xl font-bold text-white">
+                  Price - {nft.price} ETH
+                </p>
                 <button
                   className="mt-4 w-full bg-pink-500 text-white font-bold py-2 px-12 rounded"
-                  onClick={() => buyNft(nft)}
+                  onClick={() => listNFT(nft)}
                 >
-                  Buy
+                  List
                 </button>
               </div>
             </div>
@@ -126,4 +113,6 @@ export default function Home() {
       </div>
     </div>
   );
-}
+};
+
+export default MyNFTs;
