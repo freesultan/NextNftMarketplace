@@ -19,9 +19,9 @@ const CreateNFT = () => {
     try {
       var bodyFormData = new FormData();
       bodyFormData.append("image", file);
-
+      console.log("key: " + process.env.NEXT_PUBLIC_MGBB_API_KEY);
       const response = await axios({
-        url: `https://api.imgbb.com/1/upload?name=${formInput.name}&key=665215a5553b27d52927911ceae36f23`,
+        url: `https://api.imgbb.com/1/upload?name=${formInput.name}&key=${process.env.NEXT_PUBLIC_MGBB_API_KEY}`,
         method: "POST",
         headers: {
           Accept: "application/json",

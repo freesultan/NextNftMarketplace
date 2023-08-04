@@ -36,10 +36,12 @@ next-env.d.ts
 
 node_modules
 .env
+.env.local
 coverage
 coverage.json
 typechain
 typechain-types
+.secret
 
 # Hardhat files
 cache
